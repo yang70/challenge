@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+require 'json'
+require 'pry'
+
+require_relative 'lib/data_ingestor'
+
+usage = %q(
+  Usage:
+  main {api url} {api key}
+
+  Example:
+  $ ./main http://localhost:9292 myapikey
+)
+
+# Respond with the help info if no arguments or the help flag is passed
+if ARGV.empty? || ARGV[ 0 ] == '--help' || ARGV[ 0 ] == '-h'
+  puts usage
+  exit
+end
+
+# Validate arguments
+#TODO
+
+ingestor = DataIngestor.new( ARGV[ 0 ], ARGV[ 1 ] )
+
+parsed_data = ingestor.ingest_and_parse
+
+binding.pry
+flattened = []
+
+parsed_data.map do | top_org | 
+  flattened += top_org.flatten
+end
+    
+binding.pry
