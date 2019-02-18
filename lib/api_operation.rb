@@ -5,8 +5,7 @@ require 'time'
 require_relative 'api_operation_error'
 
 class ApiOperation
-  # BASE_REQUEST_LIMIT_TIME = 0.5
-  BASE_REQUEST_LIMIT_TIME = 0
+  BASE_REQUEST_LIMIT_TIME = 0.5
   THROTTLE_SLEEP_TIME     = 4
   
   def initialize( base_url, api_key )

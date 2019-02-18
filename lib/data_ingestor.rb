@@ -10,16 +10,14 @@ class DataIngestor
   
   def ingest_and_parse
     result = []
-    orgs   = load_all( "/orgs" )
     
-    orgs.each do | org |
-      if org[ "type" ] == "sole"
-        new_org = create_new_org( org[ "id" ], org[ "type" ] )
-        result << new_org
-      elsif org[ "parent_id" ].nil?
-        new_org = create_new_org( org[ "id" ], org[ "type" ] )
-        result << link_children( orgs, new_org )
-      end
+    orgs_hash.delete( :sole_orgs ).each do | solo_org |
+      result << create_new_org( solo_org[ "id" ], solo_org[ "type" ] )
+    end
+    
+    orgs_hash.delete( :top_level_orgs ).each do | top_level_org |
+      new_org = create_new_org( top_level_org[ "id" ], top_level_org[ "type" ] )
+      result << link_children( new_org )
     end
     
     result
@@ -27,13 +25,15 @@ class DataIngestor
   
   private
   
-  def link_children( orgs, parent_org )
-    children = orgs.select { | org | org[ "parent_id" ] == parent_org.id }
+  def link_children( parent_org )
+    children = orgs_hash.delete( parent_org.id )
     
-    children.each do | child_org |
-      new_org = create_new_org( child_org[ "id" ], child_org[ "type" ], parent_org )
-      parent_org.children << new_org
-      link_children( orgs, new_org )
+    if children
+      children.each do | child_org |
+        new_org = create_new_org( child_org[ "id" ], child_org[ "type" ], parent_org )
+        parent_org.children << new_org
+        link_children( new_org )
+      end
     end
     
     parent_org
@@ -44,7 +44,7 @@ class DataIngestor
     
     org_user_ids      = request.read( "/users/org/#{ id }" )
     new_org.users    += request.read_all_by_id( "/users", org_user_ids )
-    new_org.accounts += accounts_hash[ id ]
+    new_org.accounts += accounts_hash.delete( id )
     
     new_org
   end
@@ -67,6 +67,37 @@ class DataIngestor
   
   def parser
     @parser ||= DataParser.new
+  end
+  
+  def orgs_hash
+    @orgs_hash ||= begin
+      result = {}
+      orgs   = load_all( "/orgs" )
+      
+      orgs.each do | org |
+        if org[ "type" ] == "sole"
+          if result[ :sole_orgs ]
+            result[ :sole_orgs ] << org
+          else
+            result[ :sole_orgs ] = [ org ]
+          end
+        elsif org[ "parent_id" ].nil?
+          if result[ :top_level_orgs ]
+            result[ :top_level_orgs ] << org
+          else
+            result[ :top_level_orgs ] = [ org ]
+          end
+        else
+          if result[ org[ "parent_id" ] ]
+            result[ org[ "parent_id" ] ] << org
+          else
+            result[ org[ "parent_id" ] ] = [ org ]
+          end
+        end
+      end
+      
+      result
+    end
   end
   
   def accounts_hash

@@ -1,3 +1,5 @@
+require 'json'
+
 class Org
   attr_accessor :id, :type, :parent, :children, :accounts, :users
   
