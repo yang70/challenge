@@ -2,6 +2,7 @@ require 'json'
 
 module Helpers
   
+  # Serializes Org objects to JSON object.  Uses pretty_generate for aesthetics.
   def org_objects_to_json( org_objects_array )
     result = []
     

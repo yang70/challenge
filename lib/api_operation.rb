@@ -5,6 +5,7 @@ require 'time'
 require_relative 'api_operation_error'
 
 class ApiOperation
+  # Set constants for request frequency rate and request throttling rate
   BASE_REQUEST_LIMIT_TIME = 0.5
   THROTTLE_SLEEP_TIME     = 4
   
@@ -15,12 +16,15 @@ class ApiOperation
     @throttle          = false
   end
   
+  # Makes single request to given API endpoint with params, returns parsed JSON response
   def read( path, params = {} )
     req = form_request( path, params )
     res = make_request( req )
     JSON.parse( res.body )
   end
   
+  # Reads all available resources at given path by paging through all available,
+  # returns array of parsed JSON responses
   def read_all( path, params = {} )
     results = []
     page    = 1
@@ -37,6 +41,8 @@ class ApiOperation
     results
   end
   
+  # Takes an array of resource ids, and reads them all from the given API endpoint,
+  # returns an array of parsed JSON responses
   def read_all_by_id( path, id_array, params = {} )
     results = []
     
@@ -49,6 +55,8 @@ class ApiOperation
   
   private
   
+  # Helper method that formats a valid request object and parameters.  Additionally
+  # adds api key header for authorization
   def form_request( path, params )
     @uri.path  = path
     @uri.query = nil
@@ -60,6 +68,10 @@ class ApiOperation
     req
   end
   
+  # Method takes a request object and attempts up to 5 times to receive a valid
+  # response from the API.  It will institute and gradually throttle back retries
+  # if the API rate limit has been reached.  Additionally error returns will be
+  # retried as well.
   def make_request( req )
     response  = nil
     try_count = 1
@@ -100,6 +112,7 @@ class ApiOperation
     validate_response( response )
   end
   
+  # Validates API response was 200, if not raises an error with message
   def validate_response( response )
     return response if response and response.code == "200"
     

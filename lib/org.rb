@@ -12,6 +12,11 @@ class Org
     @users    = []
   end
   
+  # This recusive method follows child relationships to the bottom of the tree,
+  # and consolidates user and account data, grouping into the next highest
+  # "subsidiary" type org, which will also be returned as a main Org in the results.
+  # "Subsidiary" Orgs will maintain their relationships to the next parent "subsidiary"
+  # or top-level Org, and all child relationships to next level "subsidiary" children
   def flatten( options = {} )
     res = {
       top: [],
@@ -55,6 +60,7 @@ class Org
     is_root? ? res[ :top ] : res
   end
   
+  # Calculates the support score based on it and all child Org account values
   def support_score
     result = @accounts
     
@@ -65,6 +71,8 @@ class Org
     calculate_support_score( result )
   end
   
+  # Recursive method which returns all account information including all child Orgs accounts
+  # for all children down the tree from this point
   def accounts_with_subsidiaries
     result = @accounts
     
@@ -75,6 +83,8 @@ class Org
     result
   end
   
+  # Recursive method which returns all user information including all child Orgs users
+  # for all children down the tree from this point
   def users_with_subsidiaries
     result = @users
     
@@ -85,12 +95,14 @@ class Org
     result
   end
   
+  private
+  
+  # Helper method to determine if given Org is a tree "root" or top-level
   def is_root?
     !@parent
   end
   
-  private
-  
+  # Given array of account objects, determines support score based on the requirements
   def calculate_support_score( accounts_array )
     total_revenue = accounts_array.reduce( 0 ) do | sum, acct |
       sum += acct[ "revenue" ]

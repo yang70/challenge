@@ -1,7 +1,4 @@
 #!/usr/bin/env ruby
-require 'json'
-require 'pry'
-
 require_relative 'lib/data_ingestor'
 require_relative 'lib/helpers'
 include Helpers
@@ -20,18 +17,28 @@ if ARGV.empty? || ARGV[ 0 ] == '--help' || ARGV[ 0 ] == '-h'
   exit
 end
 
+# Instantiate DataIngestor
 ingestor = DataIngestor.new( ARGV[ 0 ], ARGV[ 1 ] )
 
+# Ingest and parse necessary data from the API
+# It will return an array of top-level Org objects with full child relationships,
+# if children present.
 parsed_data = ingestor.ingest_and_parse
 
 flattened_orgs = []
 
+# Flatten each top-level Org object tree by collapsing up into the next
+# subsidiary object or top-level object and adding to the array of Orgs
+# Each object that was flattened, if not top-level, still maintains its
+# relationship with any parents or children
 parsed_data.map do | top_org | 
   flattened_orgs += top_org.flatten
 end
 
+# Serialize each object to JSON
 json = org_objects_to_json( flattened_orgs )
 
+# Write the generated JSON object to a file
 File.open( "flattened_orgs.json", "w" ) do | file |
   file.write( json )
 end
